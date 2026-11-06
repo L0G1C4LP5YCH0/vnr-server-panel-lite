@@ -43,7 +43,6 @@ const SETTINGS_DEF = [
   { g: 'server', k: 'server.exe', label: 'Server program', type: 'file', def: 'Open77.Server.exe', hint: 'The server program inside the server folder.' },
   { g: 'server', k: 'server.startBat', label: 'Start script', type: 'file', opt: true, def: '', hint: 'A .bat that starts your server. Leave empty to start the server program directly.' },
   { g: 'server', k: 'server.config', label: 'Server config file', type: 'file', def: 'server.jsonc', hint: 'The config file the server reads (server name, mods, network).' },
-  { g: 'server', k: 'server.secrets', label: 'Secrets file', type: 'file', def: 'Secrets.cmd', hint: 'Holds the database connection and tokens as  set "NAME=value"  lines. Never leaves this PC.' },
   { g: 'server', k: 'server.log', label: 'Server log file', type: 'file', def: 'logs/server-latest.log', hint: 'Where the server writes its log (used by the Console, Crashes and Monitor pages).' },
   { g: 'server', k: 'server.resourcesRoot', label: 'Resources folder', type: 'file', def: 'resources', hint: 'The folder with your server resources, inside the server folder.' },
   { g: 'server', k: 'server.ports.game', label: 'Game port (UDP)', type: 'port', def: 11778, hidden: true, hint: 'Set on the Server page.' },
@@ -140,7 +139,7 @@ function ensureConfigFile() {
 const DEFAULT_DASH_BASE = {
   title: 'Game server', port: 7077, serverDir: '../server', pollSeconds: 3, watchSeconds: 30, crashGraceSeconds: 6,
   server: { exe: 'Open77.Server.exe', startBat: '', config: 'server.jsonc', secrets: 'Secrets.cmd', log: 'logs/server-latest.log', resourcesRoot: 'resources', stopWaitSeconds: 12, ports: { game: 11778, download: 11779, warden: 11780 }, dbPort: 3306 },
-  backups: { dir: 'backups', keep: 20, keepFull: 6, scriptsDir: 'scripts' },
+  backups: { dir: 'backups', keep: 20, keepFull: 6, scriptsDir: 'scripts', full: { all: true } },
   automation: { restart: { enabled: false, maxPerHour: 3, delaySeconds: 10 }, daily: { enabled: false, time: '06:00' }, backup: { enabled: false, everyHours: 6, beforeRestart: true } },
   links: [],
   buttons: [
@@ -238,7 +237,8 @@ function serverInfoSet(body) {
   }
   if (!changed.length) return { ok: true, changed: [], note: 'Nothing changed.' };
   let chk; try { chk = jsoncParse(text); } catch (_) { return { ok: false, error: 'The edit would break server.jsonc - nothing written.' }; }
-  if (JSON.stringify(chk) !== JSON.stringify(expected)) return { ok: false, error: 'The edit did not come out as intended - nothing written.' };
+  const canon = (v) => (Array.isArray(v) ? v.map(canon) : (v && typeof v === 'object') ? Object.keys(v).sort().reduce((o, k2) => { o[k2] = canon(v[k2]); return o; }, {}) : v);
+  if (JSON.stringify(canon(chk)) !== JSON.stringify(canon(expected))) return { ok: false, error: 'The edit did not come out as intended - nothing written.' };
   const backup = backupConfigFiles('before editing the server details');
   atomicWrite(serverJsonc(), text); watchTick(true); nameCache.mt = 0;
   let extra = '';
@@ -1616,7 +1616,8 @@ function fullTargets() {
   const f = (cfg.backups && cfg.backups.full) || {};
   const out = [];
   const generic = () => { try { return fs.readdirSync(serverDir()).filter((x) => !/^(logs?|crash_?dumps|\.git|node_modules|backups)$/i.test(x)); } catch (_) { return []; } };
-  for (const n of (f.files || f.dirs) ? (f.files || FULL_DEFAULT.files).concat(f.dirs || FULL_DEFAULT.dirs) : generic()) {
+  const list = (f.files || f.dirs) ? (f.files || FULL_DEFAULT.files).concat(f.dirs || FULL_DEFAULT.dirs) : (f.all === true || typeof LITE !== 'undefined') ? generic() : FULL_DEFAULT.files.concat(FULL_DEFAULT.dirs);
+  for (const n of list) {
     const s = String(n).replace(/\\/g, '/').replace(/\/+$/, '');
     if (!s || /^[A-Za-z]:/.test(s) || s.startsWith('/')) continue;
     const outside = s.startsWith('../');
@@ -1850,7 +1851,6 @@ async function buildSnapshot() {
     server: { state: transition || (proc.running ? 'online' : 'offline'), pids: proc.pids, startedAt: proc.startedAt },
     ports: { game: ports.game || null, download: { port: ports.download, up: probes[0] }, warden: { port: ports.warden, up: probes[1] } },
     db: { port: cfg.server.dbPort || null, up: probes[2] },
-    secrets: fs.existsSync(path.join(serverDir(), cfg.server.secrets || 'ChoomVille_Secrets.cmd')),
     resourcesCount: rl.rows ? rl.rows.length : 0,
     links: cfg.links || [],
     buttons: (cfg.buttons || []).map((b) => ({ id: b.id, label: b.label, group: b.group || 'Tools', hint: b.hint || '', danger: !!b.danger, confirm: b.confirm || '', typeToConfirm: b.typeToConfirm || '' })),
@@ -3447,6 +3447,8 @@ html body .page[data-page=server].on,html body .page[data-page=settings].on{padd
 html body .updhow{margin:0 0 12px;padding:10px 12px;border:1px solid var(--line);border-left:3px solid var(--yl,#ffd400);border-radius:var(--r);font-size:13px;line-height:1.45}
 html body .updhow b{color:var(--yl,#ffd400)}
 html body .updhow .updpath{margin-top:6px;font-family:var(--mono);font-size:12px;color:var(--cy);overflow-wrap:anywhere}
+html body #updhist .bk{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center}
+html body #updhist .bk button{margin-left:auto;white-space:nowrap;flex:none}
 .crinfo{margin:0 0 10px}.crbox{display:flex;flex-direction:column;gap:12px}
 html body .page[data-page=crashes].on{overflow-y:auto;display:block}html body #crbox{display:flex;flex-direction:column;gap:12px;padding-bottom:16px}
 .crtools{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 10px}.crtools select{min-width:240px}
@@ -3865,7 +3867,6 @@ function attention(){
   if(s==='starting'||s==='stopping')L.push(['info','Game server is '+s,'Wait for it to finish.']);
   if(!state.db.up)L.push(['bad','Database is not reachable','MariaDB did not answer on port '+state.db.port+'. The server needs it to start.']);
   if(state.serverFolderOk===false)L.push(['bad','Server folder not found','The panel cannot find your server. Point it at the right folder.','settings','Open Settings']);
-  else if(!state.secrets)L.push(['bad','The secrets file is missing','The panel cannot read the secrets file next to the server. Check its name in Settings.','settings','Open Settings']);
   var lb=state.lastBackupAt;
   if(!lb)L.push(['warn','No backup has been made yet','Open Backups and press Back up now.','backups','Open Backups']);
   else if(Date.now()-lb>=172800000)L.push(['warn','Last backup is '+relT(lb),'Older than 48 hours.','backups','Open Backups']);
@@ -3874,7 +3875,7 @@ function attention(){
   var v=state.vps;if(v&&v.error)L.push(['warn','VPS: '+v.error,'','vps','Open VPS']);
   var sig=JSON.stringify(L);if(box.dataset.sig===sig)return;box.dataset.sig=sig;box.textContent='';
   $('#attncount').textContent=L.length?'('+L.length+')':'';
-  if(!L.length){var d=el('div','ai ok');var tx=el('div','tx');tx.appendChild(el('b','','All clear'));tx.appendChild(el('span','','Server, database, secrets file, backups and updates all look fine.'));d.appendChild(tx);box.appendChild(d);return}
+  if(!L.length){var d=el('div','ai ok');var tx=el('div','tx');tx.appendChild(el('b','','All clear'));tx.appendChild(el('span','','Server, database, backups and updates all look fine.'));d.appendChild(tx);box.appendChild(d);return}
   L.forEach(function(a){var d=el('div','ai '+(a[0]==='warn'?'':a[0]));var tx=el('div','tx');tx.appendChild(el('b','',a[1]));if(a[2])tx.appendChild(el('span','',a[2]));d.appendChild(tx);if(a[3]){var b=el('button','',a[4]);b.onclick=function(){showPage(a[3])};d.appendChild(b)}box.appendChild(d)})
 }
 function render(){
@@ -3889,7 +3890,6 @@ function render(){
   kv('Downloads',state.ports.download.up?'TCP '+state.ports.download.port+' open':'closed',state.ports.download.up?'ok':'dim');
   kv('Warden',state.ports.warden.up?'TCP '+state.ports.warden.port+' open':'closed',state.ports.warden.up?'ok':'dim');
   kv('Database',state.db.up?'MariaDB on '+state.db.port:'not reachable',state.db.up?'ok':'bad');
-  kv('Secrets file',state.secrets?'found':'MISSING',state.secrets?'ok':'bad');
   kv('Resources',state.resourcesCount+' in load list');
   kv('Folder',state.serverDir,'dim');
   var a=$('#actions'); if(a.dataset.sig!==JSON.stringify(state.buttons)){
