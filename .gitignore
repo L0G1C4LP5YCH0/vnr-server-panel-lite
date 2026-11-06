@@ -1,0 +1,8 @@
+dashboard.json
+state.json
+logs/
+backups/
+updstate/
+launcher_*.json
+update_log.md
+*.tmp-*
