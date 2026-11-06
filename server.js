@@ -3445,7 +3445,7 @@ html body .page[data-page=server].on,html body .page[data-page=settings].on{padd
 @media (max-width:1500px){html body h1{letter-spacing:.12em;font-size:15px}}
 @media (min-width:701px) and (max-height:820px){html body .nav>button{padding-top:6px;padding-bottom:6px}html body .navad{margin:4px 12px;padding:5px 8px}}
 html body .updhow{margin:0 0 12px;padding:10px 12px;border:1px solid var(--line);border-left:3px solid var(--yl,#ffd400);border-radius:var(--r);font-size:13px;line-height:1.45}
-html body .updhow b{color:var(--yl,#ffd400)}
+html body .updhow b{color:var(--yl,#ffd400)}\nhtml body .updhow a{color:var(--cy)}
 html body .updhow .updpath{margin-top:6px;font-family:var(--mono);font-size:12px;color:var(--cy);overflow-wrap:anywhere}
 html body #updhist .bk{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center}
 html body #updhist .bk button{margin-left:auto;white-space:nowrap;flex:none}
@@ -4047,7 +4047,7 @@ function renderUpd(){
     d.appendChild(bb);box.appendChild(d);
   });
   $('#updwhere').textContent='Updates folder: '+upd.dirs[0];
-  (function(h){h.textContent='';var b=document.createElement('b');b.textContent='How to update: ';h.appendChild(b);h.appendChild(document.createTextNode('put the update zip you downloaded for your server files inside this updates folder, keep its original name, then press the check button. The panel backs up first and installs it while the server is off.'));var p=document.createElement('div');p.className='updpath';p.textContent=upd.dirs[0];h.appendChild(p)})($('#updhow'));
+  (function(h){h.textContent='';var b=document.createElement('b');b.textContent='How to update: ';h.appendChild(b);h.appendChild(document.createTextNode('put the update zip you downloaded for your server files inside this updates folder, keep its original name, then press the check button. The panel backs up first and installs it while the server is off.'));var p=document.createElement('div');p.className='updpath';p.textContent=upd.dirs[0];h.appendChild(p);var g=document.createElement('div');g.style.marginTop='6px';g.appendChild(document.createTextNode('Get the official server files: '));var a=document.createElement('a');a.href='https://open2077.net/host';a.target='_blank';a.rel='noopener noreferrer';a.textContent='open2077.net/host';g.appendChild(a);h.appendChild(g)})($('#updhow'));
   var hb=$('#updhist');hb.textContent='';
   upd.history.forEach(function(j){
     var d=el('div','bk');d.appendChild(el('span',j.status==='done'?'ok':'dim',j.status));d.appendChild(el('span','',j.label+' '+j.from+' → '+j.to));

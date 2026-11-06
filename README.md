@@ -8,9 +8,10 @@ One page to start, stop and watch your server, edit its public details, and keep
 
 ## Start
 
-1. Install [Node.js](https://nodejs.org) 18 or newer (LTS).
-2. Double-click `VNR_Server_Panel_Lite.bat`.
-3. In the panel open **Settings** and set your server folder, then **Dashboard > Start server**.
+1. Get your server files from [open2077.net/host](https://open2077.net/host) (official builds; needs your Open77 account).
+2. Install [Node.js](https://nodejs.org) 18 or newer (LTS).
+3. Double-click `VNR_Server_Panel_Lite.bat`.
+4. In the panel open **Settings** and set your server folder, then **Dashboard > Start server**.
 
 ## Folder layout
 
@@ -32,7 +33,7 @@ The panel looks for the server in `..\server` (next to the panel folder). If you
 - **Server page** - name (Open77 colour codes work), description, tags, language, max players, visibility
 - **Settings** - server folder, paths, ports and panel options
 - **Backups** - full backup of every file in your server folder (not logs), with restore
-- **Updates** - put the update zip for your server files inside the updates folder, then press Check & Update
+- **Updates** - download the newest server files from [open2077.net/host](https://open2077.net/host), put the zip inside the updates folder, then press Check & Update
 
 ## Screenshots
 
