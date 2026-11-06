@@ -149,12 +149,12 @@ const DEFAULT_DASH_BASE = {
     { id: 'openserver', group: 'Folders', label: 'Server folder', type: 'open', open: '.' },
     { id: 'openres', group: 'Folders', label: 'Resources folder', type: 'open', open: 'resources' },
     { id: 'openlogs', group: 'Folders', label: 'Server logs', type: 'open', open: 'logs' },
-    { id: 'openupd', group: 'Folders', label: 'Updates (drop zips here)', type: 'open', open: '../updates' },
+    { id: 'openupd', group: 'Folders', label: 'Updates (drop zips here)', type: 'open', open: 'updates' },
     { id: 'openbk', group: 'Folders', label: 'Backups', type: 'open', open: '../VNR_Launcher/backups' }
   ],
   progress: [],
   watch: { enabled: true, everyHours: 6, server: { enabled: true, url: 'https://open2077.net/host', regex: '(\\d+\\.\\d+\\.\\d+\\+op77\\.\\d+)' }, launcherRepo: '', scanDirs: [], repos: [] },
-  update: { dirs: ['../updates'], keepRollbacks: 5, requireDbBackup: true, packs: [{ id: 'server', label: 'Open77 server', kind: 'server', pattern: '^open77-server-(.+?)-win-x64(?: \\(\\d+\\))?\\.zip$', url: '' }] },
+  update: { dirs: ['updates'], keepRollbacks: 5, requireDbBackup: true, packs: [{ id: 'server', label: 'Open77 server', kind: 'server', pattern: '^open77-server-(.+?)-win-x64(?: \\(\\d+\\))?\\.zip$', url: '' }] },
   resourceGroups: [
     { id: 'custom', label: 'Your scripts', hint: 'Written by you for this server. Backed up as "scripts".', prefix: ['scripts/'] },
     { id: 'system', label: 'System scripts (Open77 platform)', hint: 'Shipped with the Open77 server zip. Do not edit - a server update replaces them.', prefix: ['system/'] },
@@ -1029,7 +1029,7 @@ let backupsCache = [];
 const DEFAULT_PROTECT = ['server.jsonc', 'acl.jsonc', 'access.json', '.open77/', 'logs/', 'backups/', 'choomville_*', 'clean_database.bat', 'create_database.sql', 'warden_login.bat', 'resources/choomville/', 'resources/choomville-ui/', 'resources/cv_*'];
 function updCfg() {
   const u = cfg.update || {};
-  return { dirs: (u.dirs && u.dirs.length) ? u.dirs : ['../updates'], keep: u.keepRollbacks || 5, requireDbBackup: u.requireDbBackup !== false, protect: u.protect || DEFAULT_PROTECT, packs: u.packs || [] };
+  return { dirs: (u.dirs && u.dirs.length) ? u.dirs : ['updates'], keep: u.keepRollbacks || 5, requireDbBackup: u.requireDbBackup !== false, protect: u.protect || DEFAULT_PROTECT, packs: u.packs || [] };
 }
 const updDirs = () => updCfg().dirs.map((d) => path.resolve(dashDir(), d));
 const updWork = () => path.join(dashDir(), 'work');
@@ -1615,7 +1615,8 @@ let fullCache = [];
 function fullTargets() {
   const f = (cfg.backups && cfg.backups.full) || {};
   const out = [];
-  for (const n of (f.files || FULL_DEFAULT.files).concat(f.dirs || FULL_DEFAULT.dirs)) {
+  const generic = () => { try { return fs.readdirSync(serverDir()).filter((x) => !/^(logs?|crash_?dumps|\.git|node_modules|backups)$/i.test(x)); } catch (_) { return []; } };
+  for (const n of (f.files || f.dirs) ? (f.files || FULL_DEFAULT.files).concat(f.dirs || FULL_DEFAULT.dirs) : generic()) {
     const s = String(n).replace(/\\/g, '/').replace(/\/+$/, '');
     if (!s || /^[A-Za-z]:/.test(s) || s.startsWith('/')) continue;
     const outside = s.startsWith('../');
@@ -2398,6 +2399,7 @@ function listen(port, tries) {
     console.log('');
     console.log('  Lite edition. Full version: ' + '40 euro - email virtualnexusroads@gmail.com');
   console.log('  ' + PRODUCT.name + ' is running.   (' + PRODUCT.brand + '  -  ' + PRODUCT.siteShort + ')');
+    try { fs.mkdirSync(updDirs()[0], { recursive: true }); } catch (_) { /* shown on the Updates page */ }
     console.log('  Server folder : ' + serverDir());
     if (VPS_MODE) console.log('  Mode          : VPS (opens on the VPS page; local auto-restart is left to the other launcher window)');
     console.log('  Dashboard     : ' + url);
@@ -3464,6 +3466,7 @@ html body .prhero{margin:12px 14px 0;padding:16px 18px;border:1px solid var(--li
 html body .prh1{font:700 26px/1.2 var(--disp);color:var(--yl,#ffd400);letter-spacing:.04em}
 html body .prh2{font:600 17px/1.3 var(--disp);color:var(--cy);margin-top:6px}
 html body .prh3{font-size:15px;color:var(--txt);margin-top:4px}
+html body #watchsec,html body #selfsec,html body #pgsec,html body #bUpdAuto,html body #bUpdAll,html body #updAllNote,html body #hc_updates{display:none!important}
 html body .litetag{font:700 10px/1 var(--disp);letter-spacing:.2em;font-style:normal;color:#0a0a12;background:var(--yl,#ffd400);padding:3px 6px;margin-left:6px;vertical-align:middle;-webkit-text-fill-color:#0a0a12;text-shadow:none}
 html body .nav button.locked{opacity:.62}html body .nav button.locked:hover{opacity:1}
 html body .nbpro{display:inline-block;margin-left:auto;background:transparent;border:1px solid var(--mg);color:var(--mg);font-size:9px;padding:1px 5px;letter-spacing:.12em}
@@ -4048,7 +4051,7 @@ function renderUpd(){
   var hb=$('#updhist');hb.textContent='';
   upd.history.forEach(function(j){
     var d=el('div','bk');d.appendChild(el('span',j.status==='done'?'ok':'dim',j.status));d.appendChild(el('span','',j.label+' '+j.from+' → '+j.to));
-    if(j.canRollback){var b=el('button','','Roll back');b.style.padding='1px 8px';b.onclick=function(){dlg('Roll back '+j.label+'?','Puts back every file this update replaced and removes the files it added. The server must be stopped.','ROLLBACK','Roll back').then(function(v){if(v)api('/api/update/rollback',{id:j.id,confirmText:v}).then(function(r){if(r.ok===false)toast(r.error,'bad');else{toast(r.note,'ok');loadUpd()}})})};d.appendChild(b)}else d.appendChild(el('span','dim',''));
+    if(false&&j.canRollback){var b=el('button','','Roll back');b.style.padding='1px 8px';b.onclick=function(){dlg('Roll back '+j.label+'?','Puts back every file this update replaced and removes the files it added. The server must be stopped.','ROLLBACK','Roll back').then(function(v){if(v)api('/api/update/rollback',{id:j.id,confirmText:v}).then(function(r){if(r.ok===false)toast(r.error,'bad');else{toast(r.note,'ok');loadUpd()}})})};d.appendChild(b)}else d.appendChild(el('span','dim',''));
     var rb=el('button','','What changed');rb.style.padding='1px 8px';rb.style.whiteSpace='nowrap';rb.onclick=function(){showReport(j.id)};d.appendChild(rb);
     hb.appendChild(d);
   });

@@ -6,3 +6,4 @@ updstate/
 launcher_*.json
 update_log.md
 *.tmp-*
+updates/

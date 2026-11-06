@@ -1,5 +1,7 @@
 # VNR - CyberPunk Server Panel Lite
 
+![VNR - CyberPunk Server Panel Lite](images/preview.png)
+
 A free control panel for your **Cyberpunk 2077 (Open77)** server, from **VNR Network Online** - [vnrnetwork.online](https://vnrnetwork.online)
 
 One page to start, stop and watch your server, edit its public details, and keep a full backup of your server files.
@@ -10,14 +12,37 @@ One page to start, stop and watch your server, edit its public details, and keep
 2. Double-click `VNR_Server_Panel_Lite.bat`.
 3. In the panel open **Settings** and set your server folder, then **Dashboard > Start server**.
 
+## Folder layout
+
+```
+YourServerFolder\
+  server\                      <- your Open77 server (or set another folder in Settings)
+  VNR_Server_Panel_Lite\       <- this repo: server.js + the .bat file
+     dashboard.json            <- created on first run
+     updates\                  <- created for you: drop update zips here
+     backups\                  <- created for you: full backups
+```
+
+The panel looks for the server in `..\server` (next to the panel folder). If yours is somewhere else, open **Settings** and change the server folder.
+
 ## What Lite includes
 
 - **Dashboard** - start, stop and restart the server, live status
 - **Console** - live server log
 - **Server page** - name (Open77 colour codes work), description, tags, language, max players, visibility
 - **Settings** - server folder, paths, ports and panel options
-- **Backups** - full backup of your server files, with restore
+- **Backups** - full backup of every file in your server folder (not logs), with restore
 - **Updates** - put the update zip for your server files inside the updates folder, then press Check & Update
+
+## Screenshots
+
+| Server | Settings |
+|---|---|
+| ![Server page](images/server.png) | ![Settings](images/settings.png) |
+| **Backups** | **Updates** |
+| ![Backups](images/backups.png) | ![Updates](images/updates.png) |
+
+![Get the full version](images/get-full-version.png)
 
 ## Get the full version - 40 EUR
 
